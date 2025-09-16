@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<meta name="theme-color" content="#000000">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PWA Setup Generator</title>
+
+  <!-- Poppins Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --card: #161616;
+      --muted: #b0b0b0;
+      --text: #f5f5f5;
+      --accent: #ff2d55; 
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 12px;
+    }
+    .app {
+      width: 100%;
+      max-width: 600px;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 14px;
+      background: #111;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--accent);
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+    }
+    main { display: flex; flex-direction: column; gap: 12px; padding: 14px; }
+    .card {
+      background: #1c1c1c;
+      border-radius: var(--radius);
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      display: block;
+      font-weight: 600;
+    }
+    input[type="text"] {
+      width: 100%;
+      background: #111;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .btn {
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      margin-top: 8px;
+    }
+    .btn.primary { background: var(--accent); color: white; }
+    .btn.primary:active { background: #e02145; }
+    .file-drop {
+      border: 2px dashed var(--accent);
+      border-radius: 10px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      color: var(--muted);
+      background: #111;
+      transition: 0.2s;
+      margin-bottom: 12px;
+    }
+    .file-drop.dragover {
+      background: rgba(255,45,85,0.1);
+      color: var(--accent);
+    }
+    footer {
+      padding: 10px;
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1><i class="fas fa-tools"></i> PWA Setup Generator</h1>
+    </header>
+
+    <main>
+      <section class="card">
+        <h2>App Settings</h2>
+
+        <label>App Name</label>
+        <input type="text" id="app_name" placeholder="My App">
+
+        <label>Start URL</label>
+        <input type="text" id="start_url" placeholder="./index.html">
+
+        <label>Description</label>
+        <input type="text" id="description" placeholder="Your app description">
+
+        <label>Manifest Path</label>
+        <input type="text" id="manifest_path" placeholder="./manifest.json">
+
+        <label>Index HTML Path</label>
+        <input type="text" id="index_path" placeholder="./index.html">
+
+        <label>Icon 192 Path</label>
+        <input type="text" id="icon192" placeholder="./icon-192.png">
+
+        <label>Icon 512 Path</label>
+        <input type="text" id="icon512" placeholder="./icon-512.png">
+
+        <button class="btn primary" onclick="generateManifest()"><i class="fas fa-file-code"></i> Download manifest.json</button>
+        <button class="btn primary" onclick="downloadSW()"><i class="fas fa-server"></i> Download service-worker.js</button>
+
+        <div class="file-drop" id="fileDrop">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <p id="fileLabel">Drag & Drop .html file here or click to choose</p>
+          <input type="file" id="fileInput" accept=".html" style="display:none;">
+        </div>
+        <button class="btn primary" onclick="processFile()"><i class="fas fa-download"></i> Inject & Download HTML</button>
+      </section>
+    </main>
+
+    <footer>
+      <i class="fas fa-bolt"></i> Created by Ravjit Singh
+    </footer>
+  </div>
+
+  <script>
+    let uploadedFile = null;
+    const drop = document.getElementById("fileDrop");
+    const fileInput = document.getElementById("fileInput");
+    const fileLabel = document.getElementById("fileLabel");
+
+    drop.addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length > 0) {
+        uploadedFile = fileInput.files[0];
+        fileLabel.textContent = uploadedFile.name;
+      }
+    });
+    drop.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      drop.classList.add("dragover");
+    });
+    drop.addEventListener("dragleave", () => drop.classList.remove("dragover"));
+    drop.addEventListener("drop", (e) => {
+      e.preventDefault();
+      drop.classList.remove("dragover");
+      if (e.dataTransfer.files.length > 0) {
+        uploadedFile = e.dataTransfer.files[0];
+        fileLabel.textContent = uploadedFile.name;
+      }
+    });
+
+    // Manifest.json generator
+    function generateManifest() {
+      const appName = document.getElementById('app_name').value || "My App";
+      const manifest = {
+        name: appName,
+        short_name: appName,
+        start_url: document.getElementById('start_url').value || "./index.html",
+        scope: "./",
+        display: "standalone",
+        orientation: "portrait",
+        background_color: "#ffffff",
+        theme_color: "#000000",
+        description: document.getElementById('description').value || "PWA App",
+        icons: [
+          { src: document.getElementById('icon192').value || "./icon-192.png", sizes: "192x192", type: "image/png", purpose: "any maskable" },
+          { src: document.getElementById('icon512').value || "./icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" }
+        ]
+      };
+      downloadFile("manifest.json", JSON.stringify(manifest, null, 2), "application/json");
+    }
+
+    // Service worker generator
+    function downloadSW() {
+      const appName = document.getElementById('app_name').value.trim() || "my-app";
+      const sanitized = appName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+      const CACHE_NAME = sanitized + "-cache-v1";
+      const urls = [
+        "./",
+        document.getElementById('index_path').value.trim() || "./index.html",
+        document.getElementById('manifest_path').value.trim() || "./manifest.json",
+        document.getElementById('icon192').value.trim() || "./icon-192.png",
+        document.getElementById('icon512').value.trim() || "./icon-512.png"
+      ];
+      const swCode = `const CACHE_NAME = "${CACHE_NAME}";
+const urlsToCache = ${JSON.stringify(urls, null, 2)};
+
+self.addEventListener("install", event => {
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(urls)));
+  self.skipWaiting();
+});
+self.addEventListener("activate", event => {
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.map(key => key !== CACHE_NAME && caches.delete(key)))));
+  self.clients.claim();
+});
+self.addEventListener("fetch", event => {
+  event.respondWith(caches.match(event.request).then(r => r || fetch(event.request)));
+});`;
+      downloadFile("service-worker.js", swCode, "application/javascript");
+    }
+
+    // Head injector
+    function processFile() {
+      if (!uploadedFile) { alert("Please upload an HTML file first."); return; }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        let content = e.target.result;
+        const snippet = `
+<link rel="manifest" href="${document.getElementById('manifest_path').value || 'manifest.json'}">
+<link rel="icon" type="image/png" sizes="192x192" href="${document.getElementById('icon192').value || 'icon-192.png'}">
+<link rel="icon" type="image/png" sizes="512x512" href="${document.getElementById('icon512').value || 'icon-512.png'}">
+<meta name="theme-color" content="#000000">`;
+        content = content.replace(/<head[^>]*>/i, match => match + "\n" + snippet);
+        const outName = (document.getElementById('app_name').value || "app") + "-modified.html";
+        downloadFile(outName, content, "text/html");
+      };
+      reader.readAsText(uploadedFile);
+    }
+
+    // Helper
+    function downloadFile(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+    }
+  </script>
+</body>
+</html>
